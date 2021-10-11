@@ -42,6 +42,11 @@
 *.idb
 *.pdb
 
+# My contribution
+*.log
+AnchorMonitor/.vscode/
+
+
 # Kernel Module Compile Results
 *.mod*
 *.cmd
