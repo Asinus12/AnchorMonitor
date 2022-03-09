@@ -26,6 +26,8 @@
 #include "dbg.h"
 #include "oled.h"
 #include "stdbool.h"
+#include "stm32f10x_tim.h"
+#include "stm32f10x_usart.h"
 
 
 __IO uint16_t IC2Value = 0;
@@ -182,31 +184,37 @@ void USART2_IRQHandler(void)
   }
 }
 
-// void TIM3_IRQHandler(void)
-// {
+void TIM2_IRQHandler(void)
+{
 
-//   // Clear TIM3 Capture compare interrupt pending bit 
-//   TIM_ClearITPendingBit(TIM3, TIM_IT_CC2|TIM_IT_Trigger);
+  char itoabuffer[10];
+  // Clear TIM3 Capture compare interrupt pending bit 
+  TIM_ClearITPendingBit(TIM2, TIM_IT_CC2|TIM_IT_Trigger);
 
-//   // Get the Input Capture value 
-//   IC2Value = TIM_GetCapture2(TIM3);
+  // Get the Input Capture value 
+  IC2Value = TIM_GetCapture2(TIM2);
 
-//   if (IC2Value != 0)
-//   {
-//     // Frequency and Duty cycle computation 
-//     DutyCycle = (TIM_GetCapture1(TIM3) * 100) / IC2Value;
-//     Frequency = SystemCoreClock / IC2Value;
-//     // if((Frequency > 1000) && (Frequency < 1300)){
-//     //    GPIO_ResetBits(GPIOC, GPIO_Pin_13); 
-//     // }
-//   }
-//   else
-//   {
-//     DutyCycle = 0;
-//     Frequency = 0;
-//   }
+  if (IC2Value != 0)
+  {
+    // Frequency and Duty cycle computation 
+    DutyCycle = (TIM_GetCapture1(TIM2) * 100) / IC2Value;
+    Frequency = SystemCoreClock / IC2Value;
+    // if((Frequency > 1000) && (Frequency < 1300)){
+    //    GPIO_ResetBits(GPIOC, GPIO_Pin_13); 
+    // }
+    __itoa(Frequency, itoabuffer, 10);
+    USART1_PutString(USART2, itoabuffer);
+    USART1_PutString(USART2, "\n\r");
 
-// }
+
+  }
+  else
+  {
+    DutyCycle = 0;
+    Frequency = 0;
+  }
+
+}
 
 
 

@@ -42,6 +42,11 @@
 #include "gyro.h"
 #include "fonts.h"
 #include "sonar.h"
+#include "stm32f10x_tim.h"
+#include "stm32f10x_gpio.h"
+#include "stm32f10x.h"
+#include "stm32f10x_rcc.h"
+#include "misc.h"
 
 
 
@@ -65,18 +70,19 @@ int init_GPIOx_pin (GPIO_TypeDef* portx, uint16_t pin, GPIOMode_TypeDef mode, ui
 }
 
 // Configure PB.09 in interrupt mode - free
+/*
 void EXTI9_5_Config(void)
 {
-  /* Init pin */
+  // Init pin 
   init_GPIOx_pin(GPIOB, GPIO_Pin_9, GPIO_Mode_IN_FLOATING, RCC_APB2Periph_GPIOB);
 
-  /* Enable AFIO clock */
+  // Enable AFIO clock 
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
 
-  /* Connect EXTI9 Line to PB.09 pin */
+  // Connect EXTI9 Line to PB.09 pin 
   GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource9);
 
-  /* Configure EXTI9 line */
+  // Configure EXTI9 line 
   EXTI_InitTypeDef   EXTI_InitStructure;
   EXTI_InitStructure.EXTI_Line = EXTI_Line9;
   EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
@@ -84,7 +90,7 @@ void EXTI9_5_Config(void)
   EXTI_InitStructure.EXTI_LineCmd = ENABLE;
   EXTI_Init(&EXTI_InitStructure);
 
-  /* Enable and set EXTI9_5 Interrupt to the lowest priority */
+  // Enable and set EXTI9_5 Interrupt to the lowest priority 
   NVIC_InitTypeDef   NVIC_InitStructure;
   NVIC_InitStructure.NVIC_IRQChannel = EXTI9_5_IRQn;
   NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0F;
@@ -93,14 +99,14 @@ void EXTI9_5_Config(void)
   NVIC_Init(&NVIC_InitStructure);
 
 }
-
+*/
 // Init input capture TIM3-ch2 on PA7, Conflict with SPI1 
 void InCapt_NVIC_Configuration(void)
 {
   NVIC_InitTypeDef NVIC_InitStructure;
 
   /* Enable the TIM3 global Interrupt */
-  NVIC_InitStructure.NVIC_IRQChannel = TIM3_IRQn;
+  NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;
   NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
   NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
@@ -108,16 +114,16 @@ void InCapt_NVIC_Configuration(void)
 }
 void init_input_capture(){
    // TIM3 clock enable 
-  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
 
   // init pins
-  init_GPIOx_pin(GPIOA, GPIO_Pin_7, GPIO_Mode_IN_FLOATING, RCC_APB2Periph_GPIOA);
+  init_GPIOx_pin(GPIOA, GPIO_Pin_1, GPIO_Mode_IN_FLOATING, RCC_APB2Periph_GPIOA);
   
   // NVIC configuration 
   InCapt_NVIC_Configuration();
 
-  /* TIM3 configuration: PWM Input mode ------------------------
-     The external signal is connected to TIM3 CH2 pin (PA.07), 
+  /* TIM2 configuration: PWM Input mode ------------------------
+     The external signal is connected to TIM2 CH2 pin (PA.01), 
      The Rising edge is used as active edge,
      The TIM3 CCR2 is used to compute the frequency value 
      The TIM3 CCR1 is used to compute the duty cycle value
@@ -130,22 +136,22 @@ void init_input_capture(){
   TIM_ICInitStructure.TIM_ICPrescaler = TIM_ICPSC_DIV1;
   TIM_ICInitStructure.TIM_ICFilter = 0x0;
 
-  TIM_PWMIConfig(TIM3, &TIM_ICInitStructure);
+  TIM_PWMIConfig(TIM2, &TIM_ICInitStructure);
 
-  /* Select the TIM3 Input Trigger: TI2FP2 */
-  TIM_SelectInputTrigger(TIM3, TIM_TS_TI2FP2);
+  /* Select the TIM2 Input Trigger: TI2FP2 */
+  TIM_SelectInputTrigger(TIM2, TIM_TS_TI2FP2);
 
   /* Select the slave Mode: Reset Mode */
-  TIM_SelectSlaveMode(TIM3, TIM_SlaveMode_Reset);
+  TIM_SelectSlaveMode(TIM2, TIM_SlaveMode_Reset);
 
   /* Enable the Master/Slave Mode */
-  TIM_SelectMasterSlaveMode(TIM3, TIM_MasterSlaveMode_Enable);
+  TIM_SelectMasterSlaveMode(TIM2, TIM_MasterSlaveMode_Enable);
 
   /* TIM enable counter */
-  TIM_Cmd(TIM3, ENABLE);
+  TIM_Cmd(TIM2, ENABLE);
 
   /* Enable the CC2 Interrupt Request */
-  TIM_ITConfig(TIM3, TIM_IT_CC2, ENABLE);
+  TIM_ITConfig(TIM2, TIM_IT_CC2, ENABLE);
 }
 
 
@@ -159,67 +165,44 @@ int main(void)
   bb_initStatusLED(); // PC13
   bb_initUSART2(); // PA2:tx PA3:rx
   i2cm_init(I2C1, 100000); // PB6:SCL, PB7:SDA for OLED
+  Delay(2000000);
   SSD1306_init_seq();
-  bb_initSPI(SPI1);// PA:4-SS, 5-CLK, 6-MISO, 7-MOSI for Gyro
+  init_input_capture();
 
+  //bb_initSPI(SPI1);// PA:4-SS, 5-CLK, 6-MISO, 7-MOSI for Gyro
   //EXTI0_Config(); // PA.00 EXTI for touch controller, zbrisu ponesrec ??
 
 
   /******************* USERSPACE: *************************/
-  // terminal print
-  terminalPrintLogo();
-  terminalPrintCommands();
 
   // display 
-  SSD1306_ClearScreen(BLACK);
-  SSD1306_DrawLogo(44,40);
-  SSD1306_UpdateScreen();
   SSD1306_ON();
-
+  
+  USART1_PutString(USART2, "Speedometer app\n\r");
 
 
   Delay(2000000);
-  Delay(2000000);
-
-  display.refresh_enable = 1;
 
 
+
+
+
+   SSD1306_ClearScreen(BLACK);
+   SSD1306_Puts("lime:", &Font_7x10, WHITE, 1, 28);
+   SSD1306_UpdateScreen();
+   
   while(1){
 
-    if(eUART == sDbgMsg.parse){
-      extractCommands();
-      switch(sCMD.ID){
-          case RST:
-            bb_initSPI(SPI1);
-          break;
-          case SPI:
-            display.refresh_enable = sCMD.rw;
-          break;
-          case LED:
-            sStatusLED.blink = sCMD.data;
-          break;
-          case SON:
-            sonar_send(sCMD.data, 2000000);
-          break;
-          case I2C:
-          break;
-          default:
-            sCMD.data = 0x00;
-            sCMD.ID = eReset;
-            sCMD.rw = 0; 
-          break;
-      }
-      reset_dbg_msg();
-    }
+    GPIO_ResetBits(GPIOB, GPIO_Pin_11); 
+    Delay(40000);
+    GPIO_SetBits(GPIOB, GPIO_Pin_11); 
+    Delay(40000);
+
+  }
 
 
-    if(display.refresh_sig && display.refresh_enable){
-      display.refresh_sig = 0;
-      SSD1306_DisplayAxis();
 
-    }
-
-  }         // End of superloop
+  while(1);       // End of superloop
   return 0; // End of Main 
 }           // End of program 
 ////////////// End of file 
