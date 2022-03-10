@@ -206,6 +206,12 @@ void TIM2_IRQHandler(void)
     USART1_PutString(USART2, itoabuffer);
     USART1_PutString(USART2, "\n\r");
 
+    SSD1306_Puts("Speed:", &Font_7x10, WHITE, 1, 28);
+    SSD1306_Puts("      ", &Font_7x10, WHITE, 50, 28);
+    SSD1306_Puts(itoabuffer, &Font_7x10, WHITE, 50, 28);
+    SSD1306_UpdateScreen();
+
+
 
   }
   else

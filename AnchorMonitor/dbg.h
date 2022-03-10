@@ -29,6 +29,8 @@ typedef enum {
     LED,
     SON,
     I2C,
+    WDT,
+    UNT,
     COUNT // for cardinality
 } eCmdID;
 
@@ -37,7 +39,9 @@ static const char * const CmdID_names[] = { // brez static vrne multiple def, fi
 	[SPI] = "SPI",
 	[LED] = "LED",
 	[SON] = "SON",
-    [I2C] = "I2C"
+    [I2C] = "I2C",
+    [WDT] = "WDT",
+    [UNT] = "UNT"
 };
 
 

@@ -1,45 +1,31 @@
 /***************************************************************************
-			                   /|
-			                  / |			 
-		                   /  |\
-		                  /   | \
-		                 /____|__\
-~~~~~~~~~~~~~~~~~~~~~~\_____/~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- ____  _     ____  _    ____  ____    _     ____  _     _  _____  ____  ____ 
-/  _ \/ \  //   _\/ \ //  _ \/  __\  / \__//  _ \/ \  // \/__ __\/  _ \/  __\
-| / \|| |\ ||  /  | |_|| / \||  \/|  | |\/|| / \|| |\ || |  / \  | / \||  \/|
-| |-||| | \||  \_ | | || \_/||    /  | |  || \_/|| | \|| |  | |  | \_/||    /
-\_/ \|\_/  \\____/\_/ \\____/\_/\_\  \_/  \\____/\_/  \\_/  \_/  \____/\_/\_\
+                                   |\
+                                   | \
+ ==================================   \
+ ==================================   /
+                                   | /
+                                   |/
+ _____                     _                      _            
+/  ___|                   | |                    | |           
+\ `--. _ __   ___  ___  __| | ___  _ __ ___   ___| |_ ___ _ __ 
+ `--. \ '_ \ / _ \/ _ \/ _` |/ _ \| '_ ` _ \ / _ \ __/ _ \ '__|
+/\__/ / |_) |  __/  __/ (_| | (_) | | | | | |  __/ ||  __/ |   
+\____/| .__/ \___|\___|\__,_|\___/|_| |_| |_|\___|\__\___|_|   
+      | |                                                      
+      |_|                                            
 
 =============================================================================
 
   AUTHOR: Blaz Bogataj 2021
-    STM32F103C8: "bluepill": F1xx Medium-density: 20 KiB SRAM, 64 KiB flash 1Kib Page
-  SWD: PA.13-SWDIO, PA.14-SWDCK     
-    C Language Version:
-    - Type info gcc in bash  
-    -std=c90 -std=c99 -std=c11 
-
-  PITFALS: 
-    - spi did not read data when probing with osciloscope (1x)
-    - spi presluhi med MISO in MOSI in CLK linijo, nedefiniran
-    - pr enmu bluepillu je blo treba povezat grounde, true
-    - FAKOFF SPI zastavca je povzrocila HardFault, Zdej delay namest flaga
-
-    - If gyro is not working, REFLASH! 
-    - if OLED is not working, disconnect all, especially UART!!
-  NOTES:
-    - in oled init sequence : changed to 0xa5 - Output ignores RAM content
-    - EXTI_GenerateSWInterrupt(EXTI_Line0); // simulates interrupt
-    - decimal [6] -> [inv bits, +1] -> [-6] in twos complement 
-
-
-  TODO:
-    - proper 3v supply  
+  BOARD : STM32F103C8V "bluepill"
+  SWD : PA13-SWDIO, PA14-SWDCK     
+  UART : PA2-Tx, PA3-Rx
+  I2C :
+  TIM2 INPUT CAPTURE :
 ****************************************************************************/
 #include "dbg.h" 
 #include "oled.h"
-#include "gyro.h"
+//#include "gyro.h"
 #include "fonts.h"
 #include "sonar.h"
 #include "stm32f10x_tim.h"
@@ -164,8 +150,9 @@ int main(void)
   bb_initSonarLED(); // PB11
   bb_initStatusLED(); // PC13
   bb_initUSART2(); // PA2:tx PA3:rx
-  i2cm_init(I2C1, 100000); // PB6:SCL, PB7:SDA for OLED
   Delay(2000000);
+
+  i2cm_init(I2C1, 100000); // PB6:SCL, PB7:SDA for OLED
   SSD1306_init_seq();
   init_input_capture();
 
@@ -176,28 +163,66 @@ int main(void)
   /******************* USERSPACE: *************************/
 
   // display 
+    
+
+      
+  USART1_PutString(USART2, "   _____                     _                      _            \n\r");
+  USART1_PutString(USART2, "  /  ___|                   | |                    | |            \n\r");
+  USART1_PutString(USART2, "  \\ `--. _ __   ___  ___  __| | ___  _ __ ___   ___| |_ ___ _ __  \n\r");
+  USART1_PutString(USART2, "   `--. \\ '_ \\ / _ \\/ _ \\/ _` |/ _ \\| '_ ` _ \\ / _ \\ __/ _ \\ '__|  \n\r");
+  USART1_PutString(USART2, "  /\\__/ / |_) |  __/  __/ (_| | (_) | | | | | |  __/ ||  __/ |    \n\r");
+  USART1_PutString(USART2, "  \\____/| .__/ \\___|\\___|\\__,_|\\___/|_| |_| |_|\\___|\\__\\___|_|    \n\r");
+  USART1_PutString(USART2, "        | |                                                       \n\r");
+  USART1_PutString(USART2, "        |_|                                                       \n\r");
+  USART1_PutString(USART2, "__________________________________________________________________\n\r");
+  USART1_PutString(USART2, "Set terminal to: Force local echo and Force local line editing \n\r");
+  USART1_PutString(USART2, "WDT X 100 ... sets width to 100mm \n\r");
+  USART1_PutString(USART2, "UNT 1 ... sets units to m/s \n\r");
+  USART1_PutString(USART2, "UNT 0 ... sets units to fps \n\r");
+
+
+  // print initial screen 
   SSD1306_ON();
-  
-  USART1_PutString(USART2, "Speedometer app\n\r");
+  SSD1306_ClearScreen(BLACK);
+  SSD1306_Puts("Width:    mm", &Font_7x10, WHITE, 1, 9);
+  SSD1306_Puts("Speed: 320", &Font_7x10, WHITE, 1, 28);
+  SSD1306_Puts("Units: fps", &Font_7x10, WHITE, 1, 46);
+  SSD1306_UpdateScreen();
 
-
-  Delay(2000000);
-
-
-
-
-
-   SSD1306_ClearScreen(BLACK);
-   SSD1306_Puts("lime:", &Font_7x10, WHITE, 1, 28);
-   SSD1306_UpdateScreen();
    
+   char wdt[4];
+
   while(1){
 
+    if(eUART == sDbgMsg.parse){
+      extractCommands();
+      switch(sCMD.ID){
+          case WDT:
+            __itoa(sCMD.data,wdt,10);
+            SSD1306_Puts(wdt, &Font_7x10, WHITE, 50, 9);
+          break;
+          case UNT:
+            if(sCMD.rw == 1)
+              SSD1306_Puts("fps", &Font_7x10, WHITE, 57, 46);
+            else 
+              SSD1306_Puts("m/s", &Font_7x10, WHITE, 57, 46);
+          break;
+          default:
+            sCMD.data = 0x00;
+            sCMD.ID = eReset;
+            sCMD.rw = 0; 
+          break;
+      }
+      SSD1306_UpdateScreen();
+      reset_dbg_msg();
+    }
+  }
+
+  while(1){
     GPIO_ResetBits(GPIOB, GPIO_Pin_11); 
     Delay(40000);
     GPIO_SetBits(GPIOB, GPIO_Pin_11); 
     Delay(40000);
-
   }
 
 

@@ -253,7 +253,7 @@ int extractCommand(const char* buffer, int i){
         // skip presledek 
         b++;
         // 0xXY
-        sCMD.data = (int) strtol(b, NULL, 16);
+        sCMD.data = (int) strtol(b, NULL, 10);
     }
     return 0;
 
